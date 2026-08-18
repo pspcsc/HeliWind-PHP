@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/header.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /#contact');
