@@ -10,8 +10,14 @@ require_once __DIR__ . '/includes/crud.php';
 require_admin();
 
 $settings = fetchOne('SELECT * FROM site_settings ORDER BY id ASC LIMIT 1') ?: [];
+$csrf = csrf_token('admin');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_verify('admin', (string)admin_post('_csrf', ''))) {
+        admin_flash('danger', 'Security token expired. Please try again.');
+        admin_redirect('settings.php');
+    }
+
     $payload = [
         'site_name' => trim((string)admin_post('site_name', '')),
         'tagline' => trim((string)admin_post('tagline', '')),
@@ -67,6 +73,7 @@ require __DIR__ . '/includes/header.php';
 <div class="card admin-card">
     <div class="card-body">
         <form method="post" class="row g-3">
+            <input type="hidden" name="_csrf" value="<?php echo e($csrf); ?>">
             <div class="col-md-6"><label class="form-label">Site Name</label><input class="form-control" name="site_name" value="<?php echo e((string)($settings['site_name'] ?? '')); ?>"></div>
             <div class="col-md-6"><label class="form-label">Company Name</label><input class="form-control" name="company_name" value="<?php echo e((string)($settings['company_name'] ?? '')); ?>"></div>
             <div class="col-md-6"><label class="form-label">Tagline</label><input class="form-control" name="tagline" value="<?php echo e((string)($settings['tagline'] ?? '')); ?>"></div>
