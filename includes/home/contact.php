@@ -28,28 +28,20 @@
 
                         <?php if (!empty($_SESSION['contact_flash'])): ?>
                             <?php $flash = $_SESSION['contact_flash']; unset($_SESSION['contact_flash']); ?>
-                            <div class="alert alert-<?php echo e((string)($flash['type'] ?? 'info')); ?> mb-4" role="alert">
+                            <div class="alert alert-<?php echo e((string)($flash['type'] ?? 'info')); ?> alert-dismissible fade show" role="alert">
                                 <?php echo e((string)($flash['message'] ?? '')); ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         <?php endif; ?>
 
-                        <form action="/contact-submit.php" method="post">
+                        <form action="contact-submit.php" method="post">
+                            <?php echo csrf_field('contact'); ?>
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <input class="form-control form-control-lg" type="text" name="name" placeholder="Your Name" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <input class="form-control form-control-lg" type="email" name="email" placeholder="Your Email">
-                                </div>
-                                <div class="col-md-6">
-                                    <input class="form-control form-control-lg" type="tel" name="phone" placeholder="Mobile Number" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <input class="form-control form-control-lg" type="text" name="subject" placeholder="Subject">
-                                </div>
-                                <div class="col-12">
-                                    <textarea class="form-control" rows="5" name="message" placeholder="Tell us about your project" required></textarea>
-                                </div>
+                                <div class="col-md-6"><input class="form-control form-control-lg" type="text" name="name" placeholder="Your Name" required></div>
+                                <div class="col-md-6"><input class="form-control form-control-lg" type="email" name="email" placeholder="Your Email"></div>
+                                <div class="col-md-6"><input class="form-control form-control-lg" type="tel" name="phone" placeholder="Mobile Number" required></div>
+                                <div class="col-md-6"><input class="form-control form-control-lg" type="text" name="subject" placeholder="Subject" value="General Enquiry"></div>
+                                <div class="col-12"><textarea class="form-control" rows="5" name="message" placeholder="Tell us about your project" required></textarea></div>
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-success btn-lg rounded-pill px-4">Submit Enquiry</button>
                                 </div>
