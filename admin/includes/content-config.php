@@ -125,4 +125,17 @@ return [
             'status' => ['label' => 'Status', 'type' => 'checkbox'],
         ],
     ],
+    'pages' => [
+        'label' => 'Pages',
+        'table' => 'pages',
+        'pk' => 'id',
+        'fields' => [
+            'page_name' => ['label' => 'Page Name', 'type' => 'text', 'required' => true],
+            'slug' => ['label' => 'Slug', 'type' => 'text', 'auto_slug_from' => 'page_name'],
+            'page_title' => ['label' => 'Page Title', 'type' => 'text'],
+            'meta_description' => ['label' => 'Meta Description', 'type' => 'textarea'],
+            'content' => ['label' => 'Content', 'type' => 'textarea'],
+            'status' => ['label' => 'Status', 'type' => 'checkbox'],
+        ],
+    ],
 ];
