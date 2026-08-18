@@ -30,7 +30,43 @@ function nav_links(): array
 
 function hero_slides(): array
 {
-    return site_data()['hero_slides'] ?? [];
+    static $slides;
+
+    if ($slides !== null) {
+        return $slides;
+    }
+
+    $fallback = site_data()['hero_slides'] ?? [];
+
+    if (function_exists('fetchAllRows')) {
+        try {
+            $rows = fetchAllRows(
+                'SELECT title, subtitle, button_text, button_link, image, mobile_image, sort_order FROM hero_slides WHERE status = 1 ORDER BY sort_order ASC, id ASC'
+            );
+
+            if (!empty($rows)) {
+                $slides = array_map(static function (array $row): array {
+                    return [
+                        'kicker' => 'HeliWind Energy Solution',
+                        'title' => (string)($row['title'] ?? ''),
+                        'subtitle' => (string)($row['subtitle'] ?? ''),
+                        'cta' => trim((string)($row['button_text'] ?? '')) ?: 'Know More',
+                        'button_link' => trim((string)($row['button_link'] ?? '')) ?: '#contact',
+                        'image' => (string)($row['image'] ?? ''),
+                        'mobile_image' => (string)($row['mobile_image'] ?? ''),
+                        'sort_order' => (int)($row['sort_order'] ?? 0),
+                    ];
+                }, $rows);
+
+                return $slides;
+            }
+        } catch (Throwable $e) {
+            // Fallback to static content below.
+        }
+    }
+
+    $slides = $fallback;
+    return $slides;
 }
 
 function whatsapp_url(string $message = 'Hi HeliWind, I would like more details.'): string
