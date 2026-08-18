@@ -48,3 +48,31 @@ function section_id(string $id): string
 {
     return preg_replace('/[^a-z0-9\-]/', '', strtolower($id));
 }
+
+function csrf_token(string $scope = 'default'): string
+{
+    if (empty($_SESSION['_csrf']) || !is_array($_SESSION['_csrf'])) {
+        $_SESSION['_csrf'] = [];
+    }
+
+    if (empty($_SESSION['_csrf'][$scope]) || !is_string($_SESSION['_csrf'][$scope])) {
+        $_SESSION['_csrf'][$scope] = bin2hex(random_bytes(32));
+    }
+
+    return $_SESSION['_csrf'][$scope];
+}
+
+function csrf_field(string $scope = 'default'): string
+{
+    return '<input type="hidden" name="_csrf" value="' . e(csrf_token($scope)) . '">';
+}
+
+function csrf_verify(string $scope, ?string $token): bool
+{
+    if ($token === null || $token === '') {
+        return false;
+    }
+
+    $stored = $_SESSION['_csrf'][$scope] ?? '';
+    return is_string($stored) && hash_equals($stored, $token);
+}
