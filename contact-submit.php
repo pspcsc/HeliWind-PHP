@@ -8,6 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+if (!csrf_verify('contact', (string)($_POST['_csrf'] ?? ''))) {
+    $_SESSION['contact_flash'] = ['type' => 'danger', 'message' => 'Security token expired. Please try again.'];
+    header('Location: /#contact');
+    exit;
+}
+
 $name = trim((string)($_POST['name'] ?? ''));
 $email = trim((string)($_POST['email'] ?? ''));
 $phone = trim((string)($_POST['phone'] ?? ''));
