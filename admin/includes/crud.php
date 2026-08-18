@@ -47,7 +47,7 @@ function admin_slug(string $text): string
     return trim($text, '-');
 }
 
-function admin_upload(string $field, string $directory = 'uploads/admin'): ?string
+function admin_upload(string $field, string $directory = 'uploads/admin', int $maxBytes = 2097152): ?string
 {
     if (empty($_FILES[$field]['name'])) {
         return null;
@@ -58,21 +58,43 @@ function admin_upload(string $field, string $directory = 'uploads/admin'): ?stri
         return null;
     }
 
-    $ext = strtolower(pathinfo((string)$file['name'], PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-    if (!in_array($ext, $allowed, true)) {
+    $size = (int)($file['size'] ?? 0);
+    if ($size <= 0 || $size > $maxBytes) {
+        return null;
+    }
+
+    $tmpPath = (string)($file['tmp_name'] ?? '');
+    if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+        return null;
+    }
+
+    $allowedMime = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+    ];
+
+    $mime = null;
+    if (class_exists('finfo')) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpPath) ?: null;
+    }
+    $mime ??= (string)($file['type'] ?? '');
+
+    if (!isset($allowedMime[$mime])) {
         return null;
     }
 
     $targetDir = dirname(__DIR__, 2) . '/' . trim($directory, '/');
-    if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0775, true);
+    if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
+        return null;
     }
 
-    $fileName = uniqid('img_', true) . '.' . $ext;
+    $fileName = uniqid('img_', true) . '.' . $allowedMime[$mime];
     $target = $targetDir . '/' . $fileName;
 
-    if (!move_uploaded_file((string)$file['tmp_name'], $target)) {
+    if (!move_uploaded_file($tmpPath, $target)) {
         return null;
     }
 
@@ -85,7 +107,12 @@ function admin_delete_upload(?string $relativePath): void
         return;
     }
 
-    $fullPath = dirname(__DIR__, 2) . '/' . ltrim($relativePath, '/');
+    $clean = ltrim(str_replace('..', '', $relativePath), '/');
+    if ($clean === '') {
+        return;
+    }
+
+    $fullPath = dirname(__DIR__, 2) . '/' . $clean;
     if (is_file($fullPath)) {
         @unlink($fullPath);
     }
