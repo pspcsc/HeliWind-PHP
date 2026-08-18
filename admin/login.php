@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/includes/crud.php';
 
 if (admin_logged_in()) {
     header('Location: dashboard.php');
@@ -11,28 +10,33 @@ if (admin_logged_in()) {
 }
 
 $error = '';
+$csrf = csrf_token('admin_login');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim((string)($_POST['username'] ?? ''));
-    $password = trim((string)($_POST['password'] ?? ''));
+    if (!csrf_verify('admin_login', (string)($_POST['_csrf'] ?? ''))) {
+        $error = 'Security token expired. Please try again.';
+    } else {
+        $username = trim((string)($_POST['username'] ?? ''));
+        $password = trim((string)($_POST['password'] ?? ''));
 
-    $user = fetchOne('SELECT * FROM users WHERE username = :u OR email = :u LIMIT 1', ['u' => $username]);
+        $user = fetchOne('SELECT * FROM users WHERE username = :u OR email = :u LIMIT 1', ['u' => $username]);
 
-    if ($user && (
-        password_verify($password, (string)$user['password']) ||
-        hash_equals((string)$user['password'], $password)
-    )) {
-        $_SESSION['admin_user'] = [
-            'id' => (int)$user['id'],
-            'full_name' => (string)$user['full_name'],
-            'email' => (string)$user['email'],
-            'role' => (string)$user['role'],
-        ];
-        header('Location: dashboard.php');
-        exit;
+        if ($user && (
+            password_verify($password, (string)$user['password']) ||
+            hash_equals((string)$user['password'], $password)
+        )) {
+            $_SESSION['admin_user'] = [
+                'id' => (int)$user['id'],
+                'full_name' => (string)$user['full_name'],
+                'email' => (string)$user['email'],
+                'role' => (string)$user['role'],
+            ];
+            header('Location: dashboard.php');
+            exit;
+        }
+
+        $error = 'Invalid username or password.';
     }
-
-    $error = 'Invalid username or password.';
 }
 ?><!doctype html>
 <html lang="en">
@@ -54,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="alert alert-danger"><?php echo e($error); ?></div>
                     <?php endif; ?>
                     <form method="post">
+                        <input type="hidden" name="_csrf" value="<?php echo e($csrf); ?>">
                         <div class="mb-3">
                             <label class="form-label">Username / Email</label>
                             <input type="text" name="username" class="form-control" required>
