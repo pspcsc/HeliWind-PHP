@@ -15,11 +15,7 @@ $table = $config['table'];
 $pk = $config['pk'];
 $fields = $config['fields'];
 $pageTitle = $config['label'];
-
-function admin_field_value(array $row, string $field): string
-{
-    return (string)($row[$field] ?? '');
-}
+$csrf = csrf_token('admin');
 
 function admin_fetch_item(PDO $pdo, string $table, string $pk, int $id): ?array
 {
@@ -56,6 +52,18 @@ if (admin_get('edit')) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_verify('admin', (string)admin_post('_csrf', ''))) {
+        admin_flash('danger', 'Security token expired. Please try again.');
+        admin_redirect('manage.php?entity=' . urlencode($entity));
+    }
+
+    $deleteId = (int)admin_post('_delete_id', 0);
+    if ($deleteId > 0) {
+        admin_delete_record($pdo, $config, $deleteId);
+        admin_flash('success', ucfirst($config['label']) . ' deleted successfully.');
+        admin_redirect('manage.php?entity=' . urlencode($entity));
+    }
+
     $id = (int)admin_post($pk, 0);
     $existing = $id ? admin_fetch_item($pdo, $table, $pk, $id) : null;
 
@@ -127,12 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     admin_redirect('manage.php?entity=' . urlencode($entity));
 }
 
-if (admin_get('delete')) {
-    admin_delete_record($pdo, $config, (int)admin_get('delete'));
-    admin_flash('success', ucfirst($config['label']) . ' deleted successfully.');
-    admin_redirect('manage.php?entity=' . urlencode($entity));
-}
-
 $rows = $pdo->query("SELECT * FROM {$table} ORDER BY {$pk} DESC LIMIT 100")->fetchAll();
 
 require_once __DIR__ . '/includes/header.php';
@@ -153,6 +155,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="card-body">
                 <h2 class="h5 mb-3"><?php echo $editing ? 'Edit' : 'Add'; ?> <?php echo e($config['label']); ?></h2>
                 <form method="post" enctype="multipart/form-data" class="row g-3">
+                    <input type="hidden" name="_csrf" value="<?php echo e($csrf); ?>">
                     <?php if ($editing): ?>
                         <input type="hidden" name="<?php echo e($pk); ?>" value="<?php echo (int)$editing[$pk]; ?>">
                     <?php endif; ?>
@@ -224,7 +227,11 @@ require_once __DIR__ . '/includes/header.php';
                                 </td>
                                 <td class="text-end">
                                     <a class="btn btn-sm btn-outline-primary" href="manage.php?entity=<?php echo e($entity); ?>&edit=<?php echo (int)$row[$pk]; ?>">Edit</a>
-                                    <a class="btn btn-sm btn-outline-danger" href="manage.php?entity=<?php echo e($entity); ?>&delete=<?php echo (int)$row[$pk]; ?>" onclick="return confirm('Delete this item?')">Delete</a>
+                                    <form method="post" class="d-inline" onsubmit="return confirm('Delete this item?');">
+                                        <input type="hidden" name="_csrf" value="<?php echo e($csrf); ?>">
+                                        <input type="hidden" name="_delete_id" value="<?php echo (int)$row[$pk]; ?>">
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
