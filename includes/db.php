@@ -19,3 +19,29 @@ try {
     http_response_code(500);
     exit('Database connection failed.');
 }
+
+function db(): PDO
+{
+    global $pdo;
+    return $pdo;
+}
+
+function fetchOne(string $sql, array $params = []): array|false
+{
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetch();
+}
+
+function fetchAllRows(string $sql, array $params = []): array
+{
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+function executeQuery(string $sql, array $params = []): bool
+{
+    $stmt = db()->prepare($sql);
+    return $stmt->execute($params);
+}
