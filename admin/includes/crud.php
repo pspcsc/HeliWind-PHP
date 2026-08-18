@@ -47,6 +47,22 @@ function admin_slug(string $text): string
     return trim($text, '-');
 }
 
+function csrf_token(string $context = 'admin'): string
+{
+    $key = '_csrf_' . $context;
+    if (empty($_SESSION[$key])) {
+        $_SESSION[$key] = bin2hex(random_bytes(32));
+    }
+
+    return (string)$_SESSION[$key];
+}
+
+function csrf_verify(string $context, string $token): bool
+{
+    $key = '_csrf_' . $context;
+    return !empty($_SESSION[$key]) && is_string($token) && hash_equals((string)$_SESSION[$key], $token);
+}
+
 function admin_upload(string $field, string $directory = 'uploads/admin', int $maxBytes = 2097152): ?string
 {
     if (empty($_FILES[$field]['name'])) {
